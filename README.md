@@ -12,7 +12,7 @@ Les fichiers produits sont `declarations-[date].json`, `dernieres-declarations-[
 
 ## Installation
 
-Requiert les packages xml,json,xmltodict.
+Requiert Python 3 et les packages xml,json,xmltodict (Avec Python 2 les deux premiers fichiers sont générés, mais le fichier des différences est erroné).
 
 ## déclarations avec un mot-clé donné
 
