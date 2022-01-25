@@ -1,7 +1,8 @@
 import xml,json,xmltodict
 from datetime import date
-from modif_nested_diff import diff, patch
+from modif_nested_diff import diff, patch #modified official nested_diff package
 import sys
+import collections
 #from deepdiff import DeepDiff
 
 #a partir du fichier "declarations.xml", produit les fichiers json declas,declas-diff,dernieres-declas
@@ -75,7 +76,10 @@ for i in obj:
 	else:
 		last_result[nom]=clean_entry
 
+print('sorting...')
 
+result = collections.OrderedDict(sorted(result.items()))
+last_result = collections.OrderedDict(sorted(last_result.items()))
 
 
 # result={}
@@ -84,15 +88,15 @@ for i in obj:
 # 	result[nom]=i
 with open("declarations-"+today+".json", "w+") as jsonFile:
 		jsonFile.seek(0)
-		json.dump(result, jsonFile, indent = 4, separators = (',', ':'), sort_keys=True)
+		json.dump(result, jsonFile, indent = 4, separators = (',', ':'))#, sort_keys=True)
 		jsonFile.truncate()
 
 with open("dernieres-declarations-"+today+".json", "w+") as jsonFile:
 		jsonFile.seek(0)
-		json.dump(last_result, jsonFile, indent = 4, separators = (',', ':'), sort_keys=True)
+		json.dump(last_result, jsonFile, indent = 4, separators = (',', ':'))#, sort_keys=True)
 		jsonFile.truncate()
 
-
+#il faut classer par ordre alpha avant!
 print("Différences avec déclarations précédentes")
 results={}
 previous_name=''
