@@ -1,5 +1,5 @@
 # hatvp-json
-Le programme `hatvp.py` effectue trois opérations sur le fichier de déclarations disponible sur le site HATVP.fr :
+Le programme `hatvp.py` effectue trois opérations sur le fichier de déclarations disponible sur le site HATVP.fr à https://www.hatvp.fr/livraison/merge/declarations.xml:
  - Rangement par ordre alphabétique et chronologique des déclarations, conversion en `json` dans le fichiers `declarations-[date].json`
  - Génération du fichier `dernieres-declarations-[date].json` avec les déclarations les plus récentes de chaque déclarant
  - Génération du fichier `declarations-diffs-[date].json` recensant les modifications apportées par chaque déclarant à chaque nouvelle déclaration
