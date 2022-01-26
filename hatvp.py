@@ -3,11 +3,19 @@ from datetime import date
 from modif_nested_diff import diff, patch #modified official nested_diff package
 import sys
 import collections
-#from deepdiff import DeepDiff
+import os
+import shutil
 
-#a partir du fichier "declarations.xml", produit les fichiers json declas,declas-diff,dernieres-declas
+
+
+
+sample=False #20 premieres entrees uniquement (pour dev)
+sampleStr="-sample-" if sample else ""
+
+
 
 xmlfilename=sys.argv[1] if len(sys.argv)>1 else 'declarations.xml'
+
 
 verbosis=False
 
@@ -29,14 +37,13 @@ def printjs(s):
 
 with open(xmlfilename, "r+") as xmlFile:
    obj = xmltodict.parse(xmlFile.read(), encoding='utf-8')['declarations']['declaration']
-#obj=obj['declarations']['declaration'][0]
-#s=obj["activCollaborateursDto"]['items']['items'][0]['commentaire']
-#verbose(type(obj),s,type(s))
-#printjs(obj)
+
+
+if sample:
+	obj=obj[0:20]
 
 def compare(d1,d2):
     #compare dates
-    #verbose(d1,'>',d2,'?')
 	d1=d1.split('/')
 	d2=d2.split('/')
 	return True if d1[2]>d2[2] else (True if d1[1]>d2[1] else True if d1[0]>d2[0] else False)
@@ -44,59 +51,71 @@ def compare(d1,d2):
 result={}#>declas.json
 last_result={}#>derniers_declas.json
 
-#special=['nom','nomSociete','descriptionMandat','employeur','employeurConjoint','etablissement']
+mandats=['tout']
+
 
 for i in obj:
-	nom=i['general']['declarant']['nom']+', '+i['general']['declarant']['prenom']
-	date_elts=i['dateDepot'].split(' ')[0].split('/')+[i['dateDepot'].split(' ')[1]]
-	key=nom+' - '+date_elts[2]+'-'+date_elts[1]+'-'+date_elts[0]+'-'+date_elts[3]
-	print(key)
-	clean_entry={}
-	for k in i:
-		printjs(i[k])
-		if 'neant' in i[k]:
-			#verbose('neant',i[k]['neant'])
-			if i[k]['neant']=='false' and  'items' in i[k] and i[k]['items']!=None:
-				#verbose('ok?',i[k]['items'])
-				clean_entry[k]=i[k]['items']['items']
-				if len(i[k].keys())>2:
-					input('error, unusual file')
-		else:
-			clean_entry[k]=i[k]
+    nom=i['general']['declarant']['nom']+', '+i['general']['declarant']['prenom']
+    date_elts=i['dateDepot'].split(' ')[0].split('/')+[i['dateDepot'].split(' ')[1]]
+    key=nom+' - '+date_elts[2]+'-'+date_elts[1]+'-'+date_elts[0]+'-'+date_elts[3]
+    print(key)
+    mandat=i['general']['qualiteMandat']['typeMandat']
+    print(mandat)
+    mandats+=[mandat]#semble equiv a 'codTypeMandatFichier' et mieux que 'qualiteDeclarantForPDF'  'labelTypeMandat'
+    clean_entry={'mandat':mandat}
+    for k in i:
+    	if 'neant' in i[k]:
+    		if i[k]['neant']=='false' and  'items' in i[k] and i[k]['items']!=None:
+    			clean_entry[k]=i[k]['items']['items']
+    			if len(i[k].keys())>2:
+    				input('error, unusual file')
+    	else:
+    		clean_entry[k]=i[k]
+    	print('----')
+    result[key]=clean_entry
+    if nom in last_result:
+    	print('Dépôt existant')
+    	if compare(i['dateDepot'],last_result[nom]['dateDepot']):
+    		print('Dépôt plus récent')
+    		last_result[nom]=clean_entry
+    	else:
+    		print('Dépôt plus ancien')
+    else:
+    	last_result[nom]=clean_entry
 
-		print('----')
-	result[key]=clean_entry
-	if nom in last_result:
-		print('Dépôt existant')
-		if compare(i['dateDepot'],last_result[nom]['dateDepot']):
-			print('Dépôt plus récent')
-			last_result[nom]=clean_entry
-		else:
-			print('Dépôt plus ancien')
-	else:
-		last_result[nom]=clean_entry
-
-print('sorting...')
+typesEffectif=collections.Counter(mandats)
+print("Nb déclas base:",len(result.keys()),len(mandats)-1)
+print("Types:",typesEffectif)
 
 result = collections.OrderedDict(sorted(result.items()))
 last_result = collections.OrderedDict(sorted(last_result.items()))
 
+for k,v in result.items():
+	print(k)
+	printjs(v)
+	print(v['mandat'])
 
-# result={}
-# for i in obj:
-# 	nom=i['general']['declarant']['prenom']+' '+i['general']['declarant']['nom']
-# 	result[nom]=i
-with open("declarations-"+today+".json", "w+") as jsonFile:
-		jsonFile.seek(0)
-		json.dump(result, jsonFile, indent = 4, separators = (',', ':'))#, sort_keys=True)
-		jsonFile.truncate()
 
-with open("dernieres-declarations-"+today+".json", "w+") as jsonFile:
-		jsonFile.seek(0)
-		json.dump(last_result, jsonFile, indent = 4, separators = (',', ':'))#, sort_keys=True)
-		jsonFile.truncate()
+dir='résultats - '+today+'/'
+if os.path.exists(dir):
+	shutil.rmtree(dir)
+os.makedirs(dir)
+for t in typesEffectif.keys():
+	print(t)
+	with open(dir+"declarations-"+today+sampleStr+str(t)+".json", "w+") as jsonFile:
+			jsonFile.seek(0)
+			tresult={k:v for k,v in result.items() if v['mandat']==t or t=='tout'}
+			json.dump(tresult, jsonFile, indent = 4, separators = (',', ':'))#, sort_keys=True)
+			jsonFile.truncate()
 
-#il faut classer par ordre alpha avant!
+	with open(dir+"dernieres-declarations-"+today+sampleStr+str(t)+".json", "w+") as jsonFile:
+			jsonFile.seek(0)
+			tresult={k:v for k,v in last_result.items() if v['mandat']==t or t=='tout'}
+			json.dump(tresult, jsonFile, indent = 4, separators = (',', ':'))#, sort_keys=True)
+			jsonFile.truncate()
+
+
+
 print("Différences avec déclarations précédentes")
 results={}
 previous_name=''
@@ -104,20 +123,24 @@ prev_decla={}
 for key in result.keys():
     print(key)
     name=key.split(' - ')[0]
+    date=str(key.split(' - ')[1])
     decla=result[key]
     if name==previous_name:#compute diff
         print("compute diff...")
-        date=key.split(' - ')[1]
         difference=diff(prev_decla,decla,U=False)
         verbose("différence",printjs(difference))
-        results[key+' - MODIF']=difference
+        results[name]['MODIF - '+date]=difference
     else:
-    	results[key]=decla
+    	results[name]={'INITIALE - '+date:decla,'mandat':decla['mandat']}
     prev_decla=decla
     previous_name=name
 
 
-with open("declarations-diffs-"+today+".json", "w+") as jsonFile:
-		jsonFile.seek(0)
-		json.dump(results, jsonFile, indent = 4, separators = (',', ':'), sort_keys=True)
-		jsonFile.truncate()
+
+for t in typesEffectif.keys():
+	print(t)
+	with open(dir+"declarations-diffs-"+today+sampleStr+str(t)+".json", "w+") as jsonFile:
+			jsonFile.seek(0)
+			tresult={k:v for k,v in results.items() if v['mandat']==t or t=='tout'}
+			json.dump(tresult, jsonFile, indent = 4, separators = (',', ':'))#, sort_keys=True)
+			jsonFile.truncate()
