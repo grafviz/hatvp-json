@@ -18,5 +18,5 @@ Requiert Python 3 et les packages xml,json,xmltodict (Avec Python 2 les deux pre
 
 La commande `findKW.py keyword [file1.json] [file2.json]` recherche le mot clé `keyword` à tous les niveaux des déclarations contenues dans les fichiers `file1.json` et `file2.json` produits par le programme `hatvp.py`. Par défaut, `file1` est `declarations-[date]` et `file2` est `dernieres-declarations-[date]`, de telle sorte à ce qu'on puisse faire tourner les deux programmes l'un après l'autre.
 
-Les fichiers produits sont en format csv et son nommés `[file1]-search-[keyword].csv` et `resultats-[file2]-search-[keyword].csv`
+Les fichiers produits sont en format csv et son nommés `[file1]-search-[keyword].csv` et `[file2]-search-[keyword].csv`
 
